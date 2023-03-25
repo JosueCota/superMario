@@ -17,14 +17,12 @@ class Game:
     def __init__(self):
         pg.init()
         self.settings = Settings()
-        size = self.settings.screen_width, self.settings.screen_height  # tuple
+        size = self.settings.screen_width, self.settings.screen_height
         self.screen = pg.display.set_mode(size=size)
         pg.display.set_caption("Pacman Portal")
 
         self.sound = Sound()
         self.scoreboard = Scoreboard(game=self)
-
-        # self.maze = Maze(game=self, file="images/blank_maze.png")
         self.map = Map(game=self)
         self.enemies = Enemies(game=self)
         self.powerup = PowerUps(game=self)

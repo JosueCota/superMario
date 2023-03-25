@@ -21,6 +21,7 @@ class Spritesheet:
         return sprite
     
     def parse_sprite(self, name):
+        name += '.png'
         sprite = self.data['frames'][name]['frame']
 
         x, y, w, h = sprite['x'], sprite['y'], sprite['w'], sprite['h']
