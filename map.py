@@ -1,21 +1,25 @@
 import pygame as pg
-
-
-class Map:
+from blocks import Floors
+from pygame.sprite import Group
+from math import ceil
+class Map():
     def __init__(self, game):
         self.game = game
         self.screen = game.screen
+        self.mario = game.mario
         self.image = pg.transform.rotozoom(pg.image.load("images/bg-1-1.jpg"), 0, .5)
         
-        self.test = pg.transform.rotozoom(pg.image.load("images/blocks.png").convert_alpha(), 0, 1)
-
+        self.ubrblocks = Floors(game=game)
+    
     def update(self):
         # TODO 
-        self.screen.scroll(3,0)
+        self.ubrblocks.update()
         self.draw()
 
     def draw(self):
+        if self.mario.posn.x >= self.screen.get_width()/2:
+            if self.mario.v.x > 0:
+                pg.Surface.scroll(self.image, -2*ceil(self.mario.v.x), 0)  
+                
         rect = self.image.get_rect()
-        self.screen.blit(self.image, rect)
-
-        self.vec = pg.Vector2(0,0)
+        # self.screen.blit(self.image, rect)
