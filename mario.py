@@ -23,8 +23,8 @@ class Mario(Sprite):
                     pg.transform.flip(right_run[1], True, False),
                     pg.transform.flip(right_run[2], True, False)]
 
-        self.rtimer = Timer(right_run, 0, 300, True)
-        self.ltimer = Timer(left_run, 0, 300, True)
+        self.rtimer = Timer(right_run, 0, 100, True)
+        self.ltimer = Timer(left_run, 0, 100, True)
         
         self.image = self.mario_img[self.curr_size][self.curr_ani][0]
         self.rect = self.mario_img[self.curr_size][self.curr_ani][1]
@@ -60,19 +60,12 @@ class Mario(Sprite):
         if self.vector.y > 10: self.vector.y = 10
         self.posn.y += self.vector.y * self.dt + (self.accel.y * .5) * (self.dt * self.dt)
         
-        if self.posn.y > 416:
-            self.on_Ground = True
-            self.vector.y = 0
-            self.posn.y = 416
-        # self.floor.collision()
-
-        self.rect.bottom = self.posn.y
-
-    def run_ani(self, key):
-        if key == 'right':
-            pass
-        elif key == 'left':
-            pass
+        for n in self.game.floors:
+            if n.collision_det() and not self.isJumping:
+                self.on_Ground = True
+                self.vector.y = 0
+                self.posn.y = 416
+        self.rect.bottom = self.posn.y 
 
     def simple_ani(self, key):
         if key == 'jump':
@@ -81,9 +74,8 @@ class Mario(Sprite):
             self.curr_ani = key
 
     def neutral_ani(self):
-        if not self.on_Ground and not self.isCrouching and not self.isLeft and not self.isRight:
-            if self.vector.y == 0 and self.vector.x == 0:
-                self.curr_ani = 'neutral'
+        if self.vector.y == 0 and self.vector.x == 0:
+            self.curr_ani = 'neutral'
 
     def limit_vector(self, max_vel):
         min(-max_vel, max(self.vector.x, max_vel))
@@ -95,7 +87,7 @@ class Mario(Sprite):
 
     def jump(self):
         if self.on_Ground:
-            self.is_jumping = True
+            self.isJumping = True
             self.vector.y -= 10
             self.on_Ground = False
 
@@ -106,6 +98,12 @@ class Mario(Sprite):
         self.hor_mov()
         self.ver_mov()
         self.neutral_ani()
-        self.image =  self.mario_img[self.curr_size][self.curr_ani][0]
+
+        if self.isRight and self.on_Ground:
+            self.image = self.rtimer.image()
+        elif self.isLeft and self.on_Ground:
+            self.image = self.ltimer.image()
+        else:
+            self.image =  self.mario_img[self.curr_size][self.curr_ani][0]
         
         

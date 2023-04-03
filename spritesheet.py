@@ -27,7 +27,7 @@ class Spritesheet:
         x, y, w, h = sprite['x'], sprite['y'], sprite['w'], sprite['h']
 
         image = self.get_sprite(x,y,w,h)
-        image = pg.transform.rotozoom(image, 0, 2).convert_alpha()
+        image = pg.transform.scale2x(image).convert_alpha()
         image = pg.transform.flip(image, True, False).convert_alpha()
         rect = image.get_rect()
         return [image, rect]

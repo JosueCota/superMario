@@ -1,7 +1,7 @@
 from random import randint
 import pygame as pg
 import sys
-from pygame.sprite import Sprite, Group
+from pygame.sprite import Group
 
 from enemies import Enemies
 from powerUp import PowerUps
@@ -52,19 +52,19 @@ class Game:
 
         self.sound = Sound()
         self.scoreboard = Scoreboard(game=self)
-        for n in range(4):
-            self.floors = Floors(game=self, group=self.camera, t=n)
-            
-        self.mario = Mario(game=self, group=self.camera)
+
+        self.floors = [Floors(game=self, group=self.camera, f=1),
+                       Floors(game=self, group=self.camera, f=2),
+                       Floors(game=self, group=self.camera, f=3),
+                       Floors(game=self, group=self.camera, f=4)]  
         
+        self.mario = Mario(game=self, group=self.camera)
         self.enemies = Enemies(game=self)
         self.powerup = PowerUps(game=self)
         
-        # self.settings.initialize_speed_settings()
-        # momentum --> speed vector when holding opposite key = speed - (scale, loss of speed, he will keep dragging the same dir until vector reaches 0) 
-        # animation during momentum until 0 is reached, so if opposite dir key is pressed, momentum animation and momentum drag should activate
-        # blocks with items contain mushroom if mario is small, fireflower if mario is big
-        #coin animation bounces up and then once it collides with bottom of block, gets deleted
+        #TODO animation during momentum until 0 is reached, so if opposite dir key is pressed, momentum animation and momentum drag should activate
+        #TODO blocks with items contain mushroom if mario is small, fireflower if mario is big
+        #TODO dcoin animation bounces up and then once it collides with bottom of block, gets deleted
 
     def restart(self): pass
 
