@@ -10,7 +10,7 @@ running = True
 spritesheet = Spritesheet('images/spritesheet.png')
 images = [spritesheet.parse_sprite('block1.png'), spritesheet.parse_sprite('block2.png')]
 
-mario = [pygame.transform.rotozoom(spritesheet.parse_sprite('mario1.png'), 0, 2),pygame.transform.rotozoom(spritesheet.parse_sprite('mario2.png'),0,2),pygame.transform.rotozoom(spritesheet.parse_sprite('mario3.png'), 0, 2)]
+mario = [spritesheet.parse_sprite('mario1.png'),spritesheet.parse_sprite('mario2.png'),spritesheet.parse_sprite('mario3.png')]
 
 index = 0
 
@@ -23,8 +23,8 @@ while running:
                 index = (index+1) % len(mario)
 
     canvas.fill((255,255,255))
-    canvas.blit(mario[index], (50, displayh- 200))
-    canvas.blit(images[0], (15, displayh- 16))
-    canvas.blit(images[1], (30, displayh- 16))
+    canvas.blit(mario[index][0], (20, displayh- 64))
+    canvas.blit(images[0][0], (0, displayh- 32))
+    canvas.blit(images[1][0], (30, displayh- 32))
     window.blit(canvas, (0,0))
     pygame.display.update()

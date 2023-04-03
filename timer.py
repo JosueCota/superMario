@@ -37,7 +37,6 @@ class TimerDict(Timer):
     self.image_dict = image_dict
     self.start_key = start_key
 
-
   def reset(self):
     self.image_list = self.image_dict[self.start_key]
     super().reset()

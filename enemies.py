@@ -1,7 +1,6 @@
 import pygame as pg 
 from pygame.sprite import Sprite, Group
 
-
 class Enemies:
     def __init__(self, game):
         self.game = game

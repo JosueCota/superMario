@@ -1,169 +1,111 @@
 import pygame as pg
-from spritesheet import Spritesheet
 from pygame.sprite import Sprite
+from spritesheet import sprite_Holder
 from timer import Timer
-
 class Mario(Sprite):
-   def __init__(self, game):
-        super().__init__()
+    def __init__(self, game, group):
+        super().__init__(group)
         self.game = game
+        self.camera = game.camera
         self.screen = game.screen
-        spritesheet = game.spritesheet
         self.settings = game.settings
+        # self.floor = game.floors
 
-        mr1 = spritesheet.parse_sprite('mario1.png')
-        mr2 = spritesheet.parse_sprite('mario2.png')
-        mr3 = spritesheet.parse_sprite('mario3.png')
-        s_mario_run = [mr1, mr2, mr3]
-      
-        bmr1 = spritesheet.parse_sprite('bmario1.png')
-        bmr2 = spritesheet.parse_sprite('bmario2.png')
-        bmr3 = spritesheet.parse_sprite('bmario3.png')
-        b_mario_run = [bmr1, bmr2, bmr3]
+        temp = sprite_Holder().init_mario()
+        self.curr_ani = 'neutral'
+        self.curr_size = 'small'
+        self.mario_img = {'small': temp[0], 'big': temp[1], 'fire': temp[2]}
+
+        right_run = [self.mario_img['small']['run1'][0], self.mario_img['small']['run2'][0], 
+                     self.mario_img['small']['run3'][0]] 
         
-        fmr1 = spritesheet.parse_sprite('fmario1.png')
-        fmr2 = spritesheet.parse_sprite('fmario2.png')
-        fmr3 = spritesheet.parse_sprite('fmario3.png')
-        fmr4 = spritesheet.parse_sprite('fmario4.png')
-        f_mario_run = [fmr1, fmr2, fmr3, fmr4]
+        left_run = [pg.transform.flip(right_run[0], True, False), 
+                    pg.transform.flip(right_run[1], True, False),
+                    pg.transform.flip(right_run[2], True, False)]
 
-        small_mario = {'neutral': spritesheet.parse_sprite('marioneutral.png')
-                            , 'run' : s_mario_run, 'jump':spritesheet.parse_sprite('mariojump.png'),
-                              'dir' : spritesheet.parse_sprite('mariodir.png'), 
-                              'crouch': spritesheet.parse_sprite('mariodeath.png')}
-        big_mario = {'neutral' : spritesheet.parse_sprite('bmarioneutral.png'), 
-                          'run' : b_mario_run, 'jump': spritesheet.parse_sprite('bmariojump.png'),
-                            'dir' : spritesheet.parse_sprite('bmariodir.png'), 
-                            'crouch': spritesheet.parse_sprite('bmariocrouch.png')}
-        fire_mario = {'neutral' : spritesheet.parse_sprite('fmarioneutral.png'), 
-                           'run' : f_mario_run, 'jump': spritesheet.parse_sprite('fmariojump.png'), 
-                           'dir' : spritesheet.parse_sprite('fmariodir.png'), 
-                           'crouch': spritesheet.parse_sprite('fmariocrouch.png')}
-
-        self.size = {'small' : small_mario, 'big' : big_mario, 'fire' : fire_mario}
-
-      #   self.s_run_timer = Timer(self.size['small']['run'][0], 0, 300, True )
-      #   self.b_run_timer = Timer(self.size['big']['run'][0], 0, 300, True)
-      #   self.f_run_timer = Timer(self.size['fire']['run'][0], 0, 300, True)
-
+        self.rtimer = Timer(right_run, 0, 300, True)
+        self.ltimer = Timer(left_run, 0, 300, True)
         
-        self.rect = pg.Rect(10, self.game.settings.screen_height-64, 16, 16)
-        self.screen_rect = game.screen.get_rect()
+        self.image = self.mario_img[self.curr_size][self.curr_ani][0]
+        self.rect = self.mario_img[self.curr_size][self.curr_ani][1]
+
+        self.initial_pos = pg.Vector2(20, 416)
+        self.rect.left, self.rect.bottom = self.initial_pos.x, self.initial_pos.y
+
+        self.posn = self.initial_pos
+        self.vector = pg.Vector2()
+
+        self.isLeft, self.isRight, self.isJumping, self.isCrouching, self.on_Ground= False, False, False, False, False  
+        self.gravity, self.friction = .35 , -.12                       
+        self.accel = pg.Vector2(0, self.gravity)
+
+    def hor_mov(self):
+        self.accel.x = 0
+        if self.isLeft:
+            self.accel.x -= .3
+        elif self.isRight:
+            self.accel.x += .3
+        self.accel.x += self.vector.x * self.friction
+        self.vector.x += self.accel.x * self.dt
+        self.limit_vector(4)
+        self.posn.x += self.vector.x * self.dt + (self.accel.x * .5) * (self.dt * self.dt)
+
+        if self.posn.x - self.camera.left <= 0:
+            self.posn.x = self.camera.left
+
+        self.rect.left = self.posn.x
+
+    def ver_mov(self):
+        self.vector.y += self.accel.y * self.dt
+        if self.vector.y > 10: self.vector.y = 10
+        self.posn.y += self.vector.y * self.dt + (self.accel.y * .5) * (self.dt * self.dt)
         
-            # posn is left, middle of y
-        self.v = pg.Vector2(0,0)
-        self.curr_size, self.curr_mode = 'small', 'neutral'
-        self.posn = self.start_pos()
-        self.runani = 0
-        self.direct = 'right'
-        self.invert_check = True
-        self.jump, self.left, self.right, self.crouched = False, False, False, False
-        self.count, self.max_jump = 10, 10
+        if self.posn.y > 416:
+            self.on_Ground = True
+            self.vector.y = 0
+            self.posn.y = 416
+        # self.floor.collision()
 
+        self.rect.bottom = self.posn.y
 
-   def start_pos(self):
-        self.curr_rect()
-        self.rect.left = 20
-        self.rect.bottom = self.screen.get_height()-80
-        return pg.Vector2(self.rect.centerx, self.rect.bottom)
+    def run_ani(self, key):
+        if key == 'right':
+            pass
+        elif key == 'left':
+            pass
 
-   def curr_rect(self):
-      if self.curr_mode == 'run':
-         self.rect = self.size[self.curr_size][self.curr_mode][self.runani][1]
-      else:
-         self.rect = self.size[self.curr_size][self.curr_mode][1]
+    def simple_ani(self, key):
+        if key == 'jump':
+            self.curr_ani = key
+        elif key == 'crouch':
+            self.curr_ani = key
 
-   def directions(self, key):
-       if key == 'left':
-          self.left = True
-       elif key == 'right':
-          self.right = True
-       elif key == 'jump':
-          self.jump = True 
-       elif key == 'crouch':
-          self.crouch = True
+    def neutral_ani(self):
+        if not self.on_Ground and not self.isCrouching and not self.isLeft and not self.isRight:
+            if self.vector.y == 0 and self.vector.x == 0:
+                self.curr_ani = 'neutral'
 
-   def direction_switch(self,key):
-       if key == 'left':
-          self.left = False
-       elif key == 'right':
-          self.right = False
-       elif key == 'jump':
-          self.jump = False
-       elif key == 'crouch':
-          self.crouched = False
+    def limit_vector(self, max_vel):
+        min(-max_vel, max(self.vector.x, max_vel))
+        if abs(self.vector.x) < .01: self.vector.x = 0
 
-   def neutral(self):
-        if self.v == (0,0):
-          self.curr_mode = 'neutral'
+    def crouch(self):
+        if self.isCrouching:
+            self.vector.x += .2 * -1
 
-   def jumping(self):
-       if self.jump:
-          self.v.y -= .50
-          self.count -= .50
-          if self.count <=0:
-             self.jump = False
-             self.count = self.max_jump
-       elif not self.jump:
-          if self.posn.y <= self.settings.screen_height/2 - 16:
-             self.v.y += .50
-          
-   def side_mov(self):
-      if self.left:  
-        if self.v.x != -(self.game.settings.max_speed):
-          self.v += (-1,0)
-        self.curr_mode = 'run'
-        self.change_animation()
-      elif self.right:
-        if self.v.x != self.game.settings.max_speed:
-          self.v += (1,0)
-        self.curr_mode = 'run'
-        self.change_animation()
-    
-   def crouch(self):
-       if self.crouched:
-        while self.v.y != 0 and self.v.x!=0:
-          if self.v.x > 0:
-              self.v += (-1,-1)
-          else: 
-            self.v += (1,1)
-        self.curr_mode = 'crouch'
-        self.change_animation()
-    
-   def change_animation(self):
-      if self.v.x >= 0:
-          self.invert_check = True
-      else:
-          self.invert_check = False
-      if self.invert_check and self.curr_mode != 'run':
-        self.size[self.curr_size][self.curr_mode][0] = pg.transform.flip(self.size[self.curr_size][self.curr_mode], True, False)
-      elif self.invert_check:
-        self.size[self.curr_size][self.curr_mode][0][0] = pg.transform.flip(self.size[self.curr_size][self.curr_mode][0][0], True, False)
-        self.size[self.curr_size][self.curr_mode][1][0] = pg.transform.flip(self.size[self.curr_size][self.curr_mode][1][0], True, False)
-        self.size[self.curr_size][self.curr_mode][2][0] = pg.transform.flip(self.size[self.curr_size][self.curr_mode][2][0], True, False)
-      else:
-         pass
+    def jump(self):
+        if self.on_Ground:
+            self.is_jumping = True
+            self.vector.y -= 10
+            self.on_Ground = False
 
-   def update_posn(self, posn):
-        self.curr_rect()
-        self.rect.centerx = posn.x
-        self.rect.centery = posn.y
-
-   def update(self):
-        self.jumping()
-        self.side_mov()
-        self.crouch()
-
-        self.posn += self.v
-        self.update_posn(self.posn)
-        self.runani += 1
-        self.runani = self.runani%3
-
-        self.draw()
-
-   def draw(self): 
-      if self.curr_mode != 'run' and self.curr_mode != 'r_run':
-        self.screen.blit(self.size[self.curr_size][self.curr_mode][0], self.size[self.curr_size][self.curr_mode][1])
-      else:
-        self.screen.blit(self.size[self.curr_size][self.curr_mode][self.runani][0], self.size[self.curr_size][self.curr_mode][self.runani][1])
+    def delta_t(self, dt):
+            self.dt = dt
+ 
+    def update(self):
+        self.hor_mov()
+        self.ver_mov()
+        self.neutral_ani()
+        self.image =  self.mario_img[self.curr_size][self.curr_ani][0]
+        
         
